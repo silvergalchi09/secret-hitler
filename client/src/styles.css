@@ -1,0 +1,492 @@
+:root {
+  --bg: #101218;
+  --bg-2: #171b24;
+  --panel: #1d2230;
+  --panel-2: #252b3c;
+  --line: #343b52;
+  --text: #efe9dc;
+  --muted: #9aa3b8;
+  --liberal: #3d7ea6;
+  --liberal-2: #7ec4e8;
+  --fascist: #9a2f2f;
+  --fascist-2: #e05a5a;
+  --gold: #c9a227;
+  --gold-2: #ead07a;
+  --danger: #ff6b6b;
+  --ok: #6bcf8e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Noto Sans KR", system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #2a1d1d 0%, transparent 50%),
+    radial-gradient(900px 500px at 100% 0%, #1a2838 0%, transparent 46%),
+    var(--bg);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+h1,
+h2,
+.brand {
+  font-family: "Playfair Display", "Noto Sans KR", serif;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+.credits {
+  position: sticky;
+  bottom: 0;
+  margin-top: 28px;
+  padding: 12px 16px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  background: rgba(16, 18, 24, 0.92);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.credits a {
+  color: var(--gold-2);
+}
+
+.home {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 18px;
+}
+
+.home h1 {
+  font-size: clamp(36px, 7vw, 64px);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.home .sub {
+  color: var(--muted);
+  max-width: 420px;
+}
+
+.test-panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.count-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.count-pills .btn {
+  padding: 8px 10px;
+}
+
+.card-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  width: min(420px, 100%);
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+input {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--gold);
+  color: #1a1406;
+}
+
+.btn.liberal {
+  background: var(--liberal);
+}
+
+.btn.fascist {
+  background: var(--fascist);
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.phase-banner {
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.phase-banner.alert {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(201, 162, 39, 0.18);
+  }
+}
+
+.tracks {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.track {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.track h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.track.liberal .slots {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.slot {
+  min-height: 64px;
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px;
+}
+
+.slot.filled.liberal {
+  background: var(--liberal);
+  color: white;
+  border-style: solid;
+}
+
+.slot.filled.fascist {
+  background: var(--fascist);
+  color: white;
+  border-style: solid;
+}
+
+.tracker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+
+.dot.on {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.seats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.seat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  min-height: 108px;
+}
+
+.seat.self {
+  border-color: var(--gold);
+}
+
+.seat.dead {
+  opacity: 0.45;
+}
+
+.seat.offline {
+  border-style: dashed;
+}
+
+.seat .name {
+  font-weight: 700;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.badge {
+  font-size: 11px;
+  background: var(--panel-2);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.badge.pres {
+  background: var(--gold);
+  color: #1a1406;
+}
+
+.badge.chan {
+  background: #8b6914;
+}
+
+.badge.ja {
+  background: var(--ok);
+  color: #102;
+}
+
+.badge.nein {
+  background: var(--danger);
+}
+
+.log {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  max-height: 220px;
+  overflow: auto;
+  font-size: 13px;
+}
+
+.log li {
+  margin: 0 0 6px;
+  color: var(--muted);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 16, 0.72);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.overlay-card {
+  width: min(560px, 100%);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 12px 12px;
+  padding: 18px;
+  max-height: 88vh;
+  overflow: auto;
+}
+
+.overlay-card h2 {
+  margin: 0 0 8px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.policy-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.policy {
+  width: 110px;
+  height: 150px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+}
+
+.policy.liberal {
+  background: linear-gradient(180deg, #4b93bd, #2c5f80);
+}
+
+.policy.fascist {
+  background: linear-gradient(180deg, #c24a4a, #7a2222);
+}
+
+.policy.selected {
+  border-color: var(--gold-2);
+  transform: translateY(-4px);
+}
+
+.role-card {
+  margin: 12px auto;
+  width: min(280px, 100%);
+  border-radius: 16px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.role-card.liberal {
+  background: linear-gradient(180deg, #2d5f80, #1b3346);
+  border: 1px solid var(--liberal-2);
+}
+
+.role-card.fascist,
+.role-card.hitler {
+  background: linear-gradient(180deg, #6d2424, #351111);
+  border: 1px solid var(--fascist-2);
+}
+
+.role-card h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.lobby-list {
+  display: grid;
+  gap: 8px;
+}
+
+.lobby-list li {
+  list-style: none;
+  background: var(--panel-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+.secret {
+  font-size: 13px;
+  background: #141821;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+@media (min-width: 800px) {
+  .overlay {
+    align-items: center;
+  }
+}
