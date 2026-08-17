@@ -53,7 +53,7 @@ export function GameTable({ snapshot, error, onAction, onLeave }: GameTableProps
         <b>{PHASE_TITLE[pub.phase] ?? pub.phase}</b>
         {pub.youAreUp
           ? " · 당신 차례입니다"
-          : pub.testMode
+          : pub.players.some((p) => p.isBot)
             ? " · 봇이 수를 두는 중…"
             : " · 디스코드에서 토론하세요"}
         {pub.inSpecialElection ? " · 특별 선거" : ""}

@@ -98,7 +98,12 @@ export class GameRoom {
       throw new GameError("이미 사용 중인 닉네임입니다.");
     }
     if (this.players.filter((p) => p.connected).length >= MAX_PLAYERS) {
-      throw new GameError("방이 가득 찼습니다.");
+      const bot = [...this.players].reverse().find((p) => p.isBot && p.connected);
+      if (bot && !this.game) {
+        this.players = this.players.filter((p) => p.id !== bot.id);
+      } else {
+        throw new GameError("방이 가득 찼습니다.");
+      }
     }
     const existing = this.players.find((p) => p.nickname === name && !p.connected);
     if (existing && !this.game) {
@@ -148,15 +153,39 @@ export class GameRoom {
   }
 
   addBots(count: number): void {
-    for (let i = 0; i < count; i++) {
-      this.players.push({
-        id: crypto.randomUUID(),
-        nickname: BOT_NAMES[i] ?? `봇${i + 1}`,
-        socketId: null,
-        connected: true,
-        isBot: true,
-      });
+    for (let i = 0; i < count; i++) this.addBot();
+  }
+
+  addBot(): RoomPlayer {
+    if (this.game) {
+      throw new GameError("로비에서만 봇을 넣을 수 있습니다.");
     }
+    if (this.connectedSeats().length >= MAX_PLAYERS) {
+      throw new GameError("방이 가득 찼습니다.");
+    }
+    const used = new Set(this.players.map((p) => p.nickname));
+    const nickname =
+      BOT_NAMES.find((name) => !used.has(name)) ?? `봇${this.bots().length + 1}`;
+    const bot: RoomPlayer = {
+      id: crypto.randomUUID(),
+      nickname,
+      socketId: null,
+      connected: true,
+      isBot: true,
+    };
+    this.players.push(bot);
+    return bot;
+  }
+
+  removeBot(playerId?: string): void {
+    if (this.game) {
+      throw new GameError("로비에서만 봇을 뺄 수 있습니다.");
+    }
+    const target = playerId
+      ? this.players.find((p) => p.id === playerId && p.isBot)
+      : [...this.players].reverse().find((p) => p.isBot);
+    if (!target) throw new GameError("빼 수 있는 봇이 없습니다.");
+    this.players = this.players.filter((p) => p.id !== target.id);
   }
 
   stopBots(): void {
@@ -168,12 +197,13 @@ export class GameRoom {
   }
 
   needsBotAction(): boolean {
-    if (!this.testMode || !this.game || this.game.phase === "gameOver") return false;
+    if (!this.game || this.game.phase === "gameOver") return false;
+    if (this.bots().length === 0) return false;
     return botIdsNeedingAction(this.game, this.bots().map((p) => p.id)).length > 0;
   }
 
   playBotStep(): boolean {
-    if (!this.game || !this.testMode) return false;
+    if (!this.game || this.bots().length === 0) return false;
     const game = this.game;
     const bots = this.bots();
     const waiting = botIdsNeedingAction(game, bots.map((p) => p.id));
@@ -197,6 +227,18 @@ export class GameRoom {
   handleAction(playerId: string, action: GameAction): void {
     const player = this.playerById(playerId);
     if (!player) throw new GameError("플레이어를 찾을 수 없습니다.");
+
+    if (action.type === "addBot") {
+      if (playerId !== this.hostId) throw new GameError("호스트만 봇을 넣을 수 있습니다.");
+      this.addBot();
+      return;
+    }
+
+    if (action.type === "removeBot") {
+      if (playerId !== this.hostId) throw new GameError("호스트만 봇을 뺄 수 있습니다.");
+      this.removeBot(action.playerId);
+      return;
+    }
 
     if (action.type === "startGame") {
       if (playerId !== this.hostId) throw new GameError("호스트만 게임을 시작할 수 있습니다.");

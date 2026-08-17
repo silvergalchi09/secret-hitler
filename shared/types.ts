@@ -91,6 +91,8 @@ export interface ClientSnapshot {
 
 export type GameAction =
   | { type: "startGame" }
+  | { type: "addBot" }
+  | { type: "removeBot"; playerId?: string }
   | { type: "confirmNight" }
   | { type: "nominate"; playerId: string }
   | { type: "vote"; choice: VoteChoice }

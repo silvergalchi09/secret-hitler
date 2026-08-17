@@ -145,6 +145,7 @@ export function App() {
           error={error}
           onStart={() => send({ type: "startGame" })}
           onLeave={leave}
+          onAction={send}
         />
       ) : (
         <GameTable
