@@ -13,6 +13,7 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
   const { publicState, privateState } = snapshot;
   const me = publicState.players.find((p) => p.id === privateState.playerId);
   const connected = publicState.players.filter((p) => p.connected).length;
+  const botCount = publicState.players.filter((p) => p.isBot).length;
   const canStart = Boolean(me?.isHost) && connected >= MIN_PLAYERS && connected <= MAX_PLAYERS;
 
   const copy = async () => {
@@ -40,9 +41,8 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
         </button>
       </div>
       <p className="hint">
-        {MIN_PLAYERS}~{MAX_PLAYERS}명이 모이면 호스트가 시작할 수 있습니다. 자리 순서가 시계 방향입니다.
-        지금은 {connected}명 접속 중 (봇 {publicState.players.filter((p) => p.isBot).length}명).
-        인원이 부족하면 호스트가 봇을 넣을 수 있습니다. 봇은 자동으로 둡니다.
+        {MIN_PLAYERS}~{MAX_PLAYERS}명이 모이면 시작할 수 있습니다. 자리 순서가 시계 방향입니다.
+        지금은 {connected}명 접속 중 (사람 {connected - botCount} · 봇 {botCount}).
       </p>
       <ul className="lobby-list">
         {publicState.players.map((p, i) => (
@@ -55,7 +55,7 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
             </span>
             <span>
               {p.connected ? "접속" : "끊김"}
-              {me?.isHost && p.isBot ? (
+              {p.isBot ? (
                 <>
                   {" "}
                   <button
@@ -70,11 +70,13 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
           </li>
         ))}
       </ul>
-      {error ? <p className="error">{error}</p> : null}
-      {me?.isHost ? (
-        <div className="row" style={{ marginTop: 12 }}>
+
+      <div className="card-panel" style={{ width: "100%", marginTop: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 18 }}>봇으로 자리 채우기</h2>
+        <p className="hint">인원이 부족하면 봇을 넣으세요. 봇은 자동으로 둡니다. 친구가 들어오면 봇 한 명이 빠질 수 있습니다.</p>
+        <div className="row">
           <button
-            className="btn"
+            className="btn liberal"
             disabled={connected >= MAX_PLAYERS}
             onClick={() => onAction({ type: "addBot" })}
           >
@@ -82,17 +84,23 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
           </button>
           <button
             className="btn ghost"
-            disabled={!publicState.players.some((p) => p.isBot)}
+            disabled={botCount === 0}
             onClick={() => onAction({ type: "removeBot" })}
           >
             봇 빼기
           </button>
+        </div>
+      </div>
+
+      {error ? <p className="error">{error}</p> : null}
+      {me?.isHost ? (
+        <p>
           <button className="btn primary" disabled={!canStart} onClick={onStart}>
             게임 시작
           </button>
-        </div>
+        </p>
       ) : (
-        <p className="hint">호스트가 시작하기를 기다리는 중입니다.</p>
+        <p className="hint">호스트가 시작하기를 기다리는 중입니다. 봇은 누구나 넣고 뺄 수 있습니다.</p>
       )}
     </div>
   );

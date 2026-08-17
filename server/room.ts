@@ -229,13 +229,13 @@ export class GameRoom {
     if (!player) throw new GameError("플레이어를 찾을 수 없습니다.");
 
     if (action.type === "addBot") {
-      if (playerId !== this.hostId) throw new GameError("호스트만 봇을 넣을 수 있습니다.");
+      if (player.isBot) throw new GameError("봇은 봇을 넣을 수 없습니다.");
       this.addBot();
       return;
     }
 
     if (action.type === "removeBot") {
-      if (playerId !== this.hostId) throw new GameError("호스트만 봇을 뺄 수 있습니다.");
+      if (player.isBot) throw new GameError("봇은 봇을 뺄 수 없습니다.");
       this.removeBot(action.playerId);
       return;
     }
