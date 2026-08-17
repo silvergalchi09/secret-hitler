@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import { MAX_PLAYERS, MIN_PLAYERS } from "../shared/rules.ts";
 import type {
   ClientSnapshot,
+  ExpansionMode,
   GameAction,
   PrivateState,
   PublicState,
@@ -63,6 +64,7 @@ export class GameRoom {
   players: RoomPlayer[] = [];
   game: InternalGame | null = null;
   testMode = false;
+  expansion: ExpansionMode = "base";
 
   constructor(code: string, hostNickname: string, socketId: string) {
     this.code = code;
@@ -228,6 +230,16 @@ export class GameRoom {
     const player = this.playerById(playerId);
     if (!player) throw new GameError("플레이어를 찾을 수 없습니다.");
 
+    if (action.type === "setExpansion") {
+      if (this.game) throw new GameError("로비에서만 규칙을 바꿀 수 있습니다.");
+      if (playerId !== this.hostId) throw new GameError("호스트만 규칙을 바꿀 수 있습니다.");
+      if (action.expansion !== "base" && action.expansion !== "mastermind") {
+        throw new GameError("알 수 없는 규칙입니다.");
+      }
+      this.expansion = action.expansion;
+      return;
+    }
+
     if (action.type === "addBot") {
       if (player.isBot) throw new GameError("봇은 봇을 넣을 수 없습니다.");
       this.addBot();
@@ -257,6 +269,7 @@ export class GameRoom {
           connected: p.connected,
           isHost: p.id === this.hostId,
         })),
+        this.expansion,
       );
       return;
     }
@@ -304,6 +317,7 @@ export class GameRoom {
       return {
         roomCode: this.code,
         testMode: this.testMode,
+        expansion: this.expansion,
         phase: "lobby",
         players,
         playerOrder: this.players.map((p) => p.id),

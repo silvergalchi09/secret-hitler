@@ -9,6 +9,7 @@ import {
   ROLE_NAME,
 } from "../shared/rules.ts";
 import type {
+  ExpansionMode,
   GameAction,
   LogEntry,
   NightInfo,
@@ -53,7 +54,7 @@ export interface InternalGame {
   vetoRejectedThisSession: boolean;
   currentPower: PresidentialPower | null;
   pendingPowerReveal: "peek" | "investigate" | null;
-  investigationResult: { playerId: string; party: "liberal" | "fascist" } | null;
+  investigationResult: { playerId: string; party: "liberal" | "fascist" | "mastermind" } | null;
   peekedPolicies: Policy[] | null;
   specialElectionReturnId: string | null;
   inSpecialElection: boolean;
@@ -61,6 +62,8 @@ export interface InternalGame {
   winReason: string | null;
   log: LogEntry[];
   logSeq: number;
+  expansion: ExpansionMode;
+  fascistFiveBeforeLiberalFour: boolean;
 }
 
 export class GameError extends Error {
@@ -157,12 +160,22 @@ function draw(game: InternalGame, n: number): Policy[] {
 function nightInfoFor(game: InternalGame, playerId: string): NightInfo | null {
   const role = game.roles[playerId];
   if (!role || role === "liberal") return null;
-  const n = game.playerOrder.length;
   const others = game.playerOrder.filter((id) => id !== playerId);
 
+  if (role === "mastermind") {
+    const hitlerId = others.find((id) => game.roles[id] === "hitler") ?? null;
+    return {
+      teammates: others.map((id) => ({ id, role: game.roles[id] })),
+      hitlerId,
+      seesHitler: true,
+      seesEveryone: true,
+    };
+  }
+
+  const n = game.playerOrder.length;
   if (n <= 6) {
     const teammates = others
-      .filter((id) => game.roles[id] !== "liberal")
+      .filter((id) => game.roles[id] === "fascist" || game.roles[id] === "hitler")
       .map((id) => ({ id, role: game.roles[id] }));
     const hitlerId =
       game.roles[playerId] === "hitler"
@@ -178,6 +191,50 @@ function nightInfoFor(game: InternalGame, playerId: string): NightInfo | null {
     .map((id) => ({ id, role: game.roles[id] }));
   const hitlerId = others.find((id) => game.roles[id] === "hitler") ?? null;
   return { teammates, hitlerId, seesHitler: true };
+}
+
+function mastermindId(game: InternalGame): string | undefined {
+  return game.playerOrder.find((id) => game.roles[id] === "mastermind");
+}
+
+function tryMastermindWin(
+  game: InternalGame,
+  policy: Policy,
+  chaos: boolean,
+): boolean {
+  if (game.expansion !== "mastermind") return false;
+  const mm = mastermindId(game);
+  if (!mm || !game.alive[mm]) return false;
+
+  if (
+    policy === "fascist" &&
+    game.fascistPolicies >= 5 &&
+    game.liberalPolicies >= 4 &&
+    !game.fascistFiveBeforeLiberalFour
+  ) {
+    endGame(
+      game,
+      "mastermind",
+      "자유 정책 4장 이후 파시스트 정책 5장이 발효되어 마스터 마인드가 승리했습니다.",
+    );
+    return true;
+  }
+
+  if (
+    policy === "liberal" &&
+    game.liberalPolicies >= 4 &&
+    game.fascistFiveBeforeLiberalFour &&
+    !chaos &&
+    game.lastElectedChancellorId === mm
+  ) {
+    endGame(
+      game,
+      "mastermind",
+      "파시스트 정책 5장 이후 마스터 마인드가 수상으로서 4번째 자유 정책을 발효해 승리했습니다.",
+    );
+    return true;
+  }
+  return false;
 }
 
 function endGame(game: InternalGame, winner: Winner, winReason: string): void {
@@ -236,6 +293,7 @@ function enactRevealedPolicy(
       endGame(game, "liberal", "자유주의 정책 5장이 발효되어 자유당이 승리했습니다.");
       return;
     }
+    if (tryMastermindWin(game, policy, chaos)) return;
     beginNextElection(game);
     return;
   }
@@ -244,12 +302,16 @@ function enactRevealedPolicy(
   if (game.fascistPolicies >= 5) {
     game.vetoUnlocked = true;
   }
+  if (game.fascistPolicies >= 5 && game.liberalPolicies < 4) {
+    game.fascistFiveBeforeLiberalFour = true;
+  }
   pushLog(
     game,
     chaos
       ? `혼란: ${POLICY_NAME.fascist}이 발효되었습니다. (권한 없음)`
       : `${POLICY_NAME.fascist}이 발효되었습니다.`,
   );
+  if (tryMastermindWin(game, policy, chaos)) return;
   if (game.fascistPolicies >= 6) {
     endGame(game, "fascist", "파시스트 정책 6장이 발효되어 파시스트가 승리했습니다.");
     return;
@@ -282,9 +344,18 @@ function startLegislativeSession(game: InternalGame): void {
   game.vetoRejectedThisSession = false;
 }
 
-export function createGame(players: SeatPlayer[]): InternalGame {
+export function createGame(
+  players: SeatPlayer[],
+  expansion: ExpansionMode = "base",
+): InternalGame {
   const playerOrder = players.map((p) => p.id);
   const rolesList = shuffle(buildRoleList(playerOrder.length));
+  if (expansion === "mastermind") {
+    const liberalIndex = rolesList.findIndex((role) => role === "liberal");
+    if (liberalIndex >= 0) {
+      rolesList[liberalIndex] = shuffle<Role>(["liberal", "mastermind"])[0];
+    }
+  }
   const roles: Record<string, Role> = {};
   const alive: Record<string, boolean> = {};
   const investigated: Record<string, boolean> = {};
@@ -337,8 +408,16 @@ export function createGame(players: SeatPlayer[]): InternalGame {
     winReason: null,
     log: [],
     logSeq: 0,
+    expansion,
+    fascistFiveBeforeLiberalFour: false,
   };
   pushLog(game, `게임이 시작되었습니다. 첫 대통령은 ${nameOf(game, firstPresident)}입니다.`);
+  if (expansion === "mastermind") {
+    pushLog(
+      game,
+      "마스터 마인드 규칙을 사용합니다. 자유당 한 자리에 마스터 마인드가 섞여 들어갈 수 있습니다.",
+    );
+  }
   return game;
 }
 
@@ -687,6 +766,7 @@ export function getPublicGameFields(
   playerId: string,
 ): Omit<PublicState, "roomCode" | "players" | "testMode"> {
   return {
+    expansion: game.expansion,
     phase: game.phase,
     playerOrder: game.playerOrder,
     liberalPolicies: game.liberalPolicies,

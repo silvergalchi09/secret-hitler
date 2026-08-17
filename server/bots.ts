@@ -11,6 +11,30 @@ function pick<T>(items: T[]): T {
   return items[randomInt(items.length)];
 }
 
+function discardPrefer(
+  game: InternalGame,
+  role: string,
+  party: string,
+): "liberal" | "fascist" {
+  if (role === "mastermind") {
+    if (game.fascistFiveBeforeLiberalFour || game.liberalPolicies < 4) return "fascist";
+    return "liberal";
+  }
+  return party === "liberal" ? "fascist" : "liberal";
+}
+
+function enactPrefer(
+  game: InternalGame,
+  role: string,
+  party: string,
+): "liberal" | "fascist" {
+  if (role === "mastermind") {
+    if (game.fascistFiveBeforeLiberalFour || game.liberalPolicies < 4) return "liberal";
+    return "fascist";
+  }
+  return party === "liberal" ? "liberal" : "fascist";
+}
+
 export function chooseBotAction(
   game: InternalGame,
   botId: string,
@@ -32,7 +56,7 @@ export function chooseBotAction(
       return { type: "vote", choice: randomInt(100) < 80 ? "ja" : "nein" };
     case "presidentDiscard": {
       const hand = game.policyHand;
-      const prefer = party === "liberal" ? "fascist" : "liberal";
+      const prefer = discardPrefer(game, role, party);
       const index = Math.max(0, hand.findIndex((card) => card === prefer));
       return { type: "discardPolicy", index };
     }
@@ -44,7 +68,7 @@ export function chooseBotAction(
         if (party === "liberal" && allFascist) return { type: "requestVeto" };
         if (party === "fascist" && allLiberal) return { type: "requestVeto" };
       }
-      const prefer = party === "liberal" ? "liberal" : "fascist";
+      const prefer = enactPrefer(game, role, party);
       const index = Math.max(0, hand.findIndex((card) => card === prefer));
       return { type: "enactPolicy", index };
     }

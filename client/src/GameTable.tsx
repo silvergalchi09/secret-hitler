@@ -15,6 +15,8 @@ import type {
   Role,
 } from "@shared/types";
 
+import { NotesPad } from "./NotesPad";
+
 interface GameTableProps {
   snapshot: ClientSnapshot;
   error: string;
@@ -36,12 +38,15 @@ export function GameTable({ snapshot, error, onAction, onLeave }: GameTableProps
     pub.players.find((p) => p.id === id)?.nickname ?? "—";
 
   return (
-    <div className="page">
+    <div className="page table-page">
+      <div className="table-layout">
+        <div className="table-main">
       <div className="topbar">
         <div>
           <div className="brand">시크릿 히틀러</div>
           <div className="pill">방 {pub.roomCode}</div>
           {pub.testMode ? <div className="pill">테스트 모드</div> : null}
+          {pub.expansion === "mastermind" ? <div className="pill">마스터 마인드</div> : null}
         </div>
         <div className="pill">
           덱 {pub.drawPileCount} · 버림 {pub.discardPileCount}
@@ -94,6 +99,15 @@ export function GameTable({ snapshot, error, onAction, onLeave }: GameTableProps
       {error ? <p className="error">{error}</p> : null}
 
       <ActionOverlay snapshot={snapshot} onAction={onAction} onLeave={onLeave} me={me} />
+        </div>
+        <NotesPad
+          roomCode={pub.roomCode}
+          selfId={priv.playerId}
+          players={pub.players}
+          playerOrder={pub.playerOrder}
+          expansion={pub.expansion}
+        />
+      </div>
     </div>
   );
 }
@@ -202,18 +216,16 @@ function ActionOverlay({
             <div className="secret">
               {priv.nightInfo.teammates.length ? (
                 <div>
-                  동료:{" "}
+                  {priv.nightInfo.seesEveryone ? "전원 역할: " : "동료: "}
                   {priv.nightInfo.teammates
                     .map((t) => `${nameOf(pub, t.id)} (${ROLE_NAME[t.role]})`)
                     .join(", ")}
                 </div>
               ) : null}
-              {priv.nightInfo.seesHitler && priv.nightInfo.hitlerId ? (
+              {priv.nightInfo.seesHitler && priv.nightInfo.hitlerId && !priv.nightInfo.seesEveryone ? (
                 <div>히틀러: {nameOf(pub, priv.nightInfo.hitlerId)}</div>
               ) : null}
-              {priv.role === "hitler" && pub.players.length >= 7 ? (
-                <div>7인 이상에서 히틀러는 동료 파시스트를 모릅니다.</div>
-              ) : null}
+              {priv.nightInfo.seesEveryone ? <div>당신은 모든 플레이어의 정체를 압니다.</div> : null}
             </div>
           ) : priv.role === "hitler" && pub.players.filter((p) => p.alive).length >= 7 ? (
             <div className="secret">당신은 히틀러입니다. 동료 파시스트는 표시되지 않습니다.</div>
@@ -414,7 +426,13 @@ function ActionOverlay({
     return (
       <div className="overlay">
         <div className="overlay-card">
-          <h2>{pub.winner === "liberal" ? "자유당 승리" : "파시스트 승리"}</h2>
+          <h2>
+            {pub.winner === "liberal"
+              ? "자유당 승리"
+              : pub.winner === "fascist"
+                ? "파시스트 승리"
+                : "마스터 마인드 승리"}
+          </h2>
           <p>{pub.winReason}</p>
           <ul className="lobby-list">
             {pub.playerOrder.map((id) => {
@@ -457,7 +475,9 @@ function nameOf(pub: ClientSnapshot["publicState"], id: string | null): string {
 function RoleCard({ role }: { role: Role }) {
   return (
     <div className={`role-card ${role}`}>
-      <div className="hint">{role === "liberal" ? "자유당" : "파시스트"}</div>
+      <div className="hint">
+        {role === "liberal" ? "자유당" : role === "mastermind" ? "제3세력" : "파시스트"}
+      </div>
       <h3>{ROLE_NAME[role]}</h3>
     </div>
   );

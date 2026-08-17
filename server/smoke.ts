@@ -120,4 +120,80 @@ function assert(cond: unknown, msg: string): asserts cond {
   console.log("night info ok");
 }
 
+function withMastermind(n: number): InternalGame {
+  const game = createGame(seats(n), "mastermind");
+  if (!game.playerOrder.some((id) => game.roles[id] === "mastermind")) {
+    const liberal = game.playerOrder.find((id) => game.roles[id] === "liberal")!;
+    game.roles[liberal] = "mastermind";
+  }
+  return game;
+}
+
+{
+  const game = withMastermind(5);
+  const mm = game.playerOrder.find((id) => game.roles[id] === "mastermind")!;
+  const fascist = game.playerOrder.find((id) => game.roles[id] === "fascist")!;
+  const infoMm = getPrivateState(game, mm).nightInfo;
+  const infoF = getPrivateState(game, fascist).nightInfo;
+  assert(infoMm?.seesEveryone, "mastermind should see everyone");
+  assert(infoMm?.teammates.length === 4, "mastermind should see the other four roles");
+  assert(
+    infoF?.teammates.every((t) => t.role !== "mastermind"),
+    "fascists should not treat mastermind as a teammate",
+  );
+  console.log("mastermind night ok");
+}
+
+{
+  const game = withMastermind(5);
+  confirmAll(game);
+  const president = game.presidentialCandidateId;
+  const chancellor = eligibleChancellorIds(game).find((id) => game.roles[id] !== "hitler")!;
+  elect(game, chancellor);
+  game.liberalPolicies = 4;
+  game.fascistPolicies = 4;
+  game.fascistFiveBeforeLiberalFour = false;
+  game.policyHand = ["fascist", "fascist", "fascist"];
+  applyAction(game, president, { type: "discardPolicy", index: 0 });
+  applyAction(game, chancellor, { type: "enactPolicy", index: 0 });
+  assert(game.winner === "mastermind", "4 liberal then 5 fascist should win mastermind");
+  console.log("mastermind path A ok");
+}
+
+{
+  const game = withMastermind(5);
+  confirmAll(game);
+  const mm = game.playerOrder.find((id) => game.roles[id] === "mastermind")!;
+  if (game.presidentialCandidateId === mm) {
+    game.presidentialCandidateId = game.playerOrder.find((id) => id !== mm)!;
+  }
+  const president = game.presidentialCandidateId;
+  elect(game, mm);
+  game.liberalPolicies = 3;
+  game.fascistPolicies = 5;
+  game.fascistFiveBeforeLiberalFour = true;
+  game.policyHand = ["liberal", "liberal", "liberal"];
+  applyAction(game, president, { type: "discardPolicy", index: 0 });
+  applyAction(game, mm, { type: "enactPolicy", index: 0 });
+  assert(game.winner === "mastermind", "mastermind chancellor 4th liberal should win");
+  console.log("mastermind path B ok");
+}
+
+{
+  const game = withMastermind(5);
+  confirmAll(game);
+  const mm = game.playerOrder.find((id) => game.roles[id] === "mastermind")!;
+  const president = game.presidentialCandidateId === mm
+    ? game.playerOrder.find((id) => id !== mm)!
+    : game.presidentialCandidateId;
+  game.presidentialCandidateId = president;
+  game.phase = "presidentialPower";
+  game.lastElectedPresidentId = president;
+  game.currentPower = "execution";
+  applyAction(game, president, { type: "usePower", targetId: mm });
+  assert(!game.alive[mm], "mastermind can be executed");
+  assert(game.winner === null, "killing mastermind should not end the game");
+  console.log("execute mastermind ok");
+}
+
 console.log("all smoke tests passed");

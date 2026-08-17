@@ -37,7 +37,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -51,6 +53,69 @@ h2,
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 16px 80px;
+}
+
+.table-page {
+  max-width: 1400px;
+}
+
+.table-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+}
+
+.notepad {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  position: sticky;
+  top: 12px;
+}
+
+.notepad h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.note-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.note-name {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.notepad select,
+.notepad textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.role-card.mastermind {
+  background: linear-gradient(180deg, #5a4a1a, #2c2410);
+  border: 1px solid var(--gold-2);
+}
+
+@media (max-width: 900px) {
+  .table-layout {
+    grid-template-columns: 1fr;
+  }
+  .notepad {
+    position: static;
+  }
 }
 
 .credits {

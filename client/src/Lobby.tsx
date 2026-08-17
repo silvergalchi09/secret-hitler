@@ -72,6 +72,32 @@ export function Lobby({ snapshot, error, onStart, onLeave, onAction }: LobbyProp
       </ul>
 
       <div className="card-panel" style={{ width: "100%", marginTop: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 18 }}>게임 규칙</h2>
+        <p className="hint">
+          {publicState.expansion === "mastermind"
+            ? "마스터 마인드: 자유당원 한 장과 마스터 마인드를 섞어 한 장만 넣습니다. 제3세력은 모두의 정체를 알고, 자유 4장 이후 파시 5장(암살되지 않은 채)이거나, 파시 5장이 먼저면 본인이 수상으로 자유 4장을 통과시켜야 이깁니다."
+            : "기본판: 자유 정책 5장 또는 히틀러 처형이면 자유당, 파시스트 정책 6장 또는 파시 3장 이후 히틀러 수상이면 파시스트 승리입니다."}
+        </p>
+        <div className="row">
+          <button
+            className={`btn${publicState.expansion === "base" ? " primary" : ""}`}
+            disabled={!me?.isHost}
+            onClick={() => onAction({ type: "setExpansion", expansion: "base" })}
+          >
+            기본판
+          </button>
+          <button
+            className={`btn${publicState.expansion === "mastermind" ? " primary" : ""}`}
+            disabled={!me?.isHost}
+            onClick={() => onAction({ type: "setExpansion", expansion: "mastermind" })}
+          >
+            마스터 마인드
+          </button>
+        </div>
+        {me?.isHost ? null : <p className="hint">호스트가 기본판/확장판을 고릅니다.</p>}
+      </div>
+
+      <div className="card-panel" style={{ width: "100%", marginTop: 16 }}>
         <h2 style={{ margin: 0, fontSize: 18 }}>봇으로 자리 채우기</h2>
         <p className="hint">인원이 부족하면 봇을 넣으세요. 봇은 자동으로 둡니다. 친구가 들어오면 봇 한 명이 빠질 수 있습니다.</p>
         <div className="row">

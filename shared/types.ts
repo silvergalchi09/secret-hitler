@@ -1,8 +1,9 @@
-export type Role = "liberal" | "fascist" | "hitler";
-export type Party = "liberal" | "fascist";
+export type Role = "liberal" | "fascist" | "hitler" | "mastermind";
+export type Party = "liberal" | "fascist" | "mastermind";
 export type Policy = "liberal" | "fascist";
 export type VoteChoice = "ja" | "nein";
-export type Winner = "liberal" | "fascist";
+export type Winner = "liberal" | "fascist" | "mastermind";
+export type ExpansionMode = "base" | "mastermind";
 
 export type Phase =
   | "lobby"
@@ -39,6 +40,7 @@ export interface LogEntry {
 export interface PublicState {
   roomCode: string;
   testMode: boolean;
+  expansion: ExpansionMode;
   phase: Phase;
   players: PublicPlayer[];
   playerOrder: string[];
@@ -72,6 +74,7 @@ export interface NightInfo {
   teammates: { id: string; role: Role }[];
   hitlerId: string | null;
   seesHitler: boolean;
+  seesEveryone?: boolean;
 }
 
 export interface PrivateState {
@@ -91,6 +94,7 @@ export interface ClientSnapshot {
 
 export type GameAction =
   | { type: "startGame" }
+  | { type: "setExpansion"; expansion: ExpansionMode }
   | { type: "addBot" }
   | { type: "removeBot"; playerId?: string }
   | { type: "confirmNight" }

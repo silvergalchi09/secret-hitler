@@ -42,19 +42,23 @@ export function buildRoleList(playerCount: number): Role[] {
   ];
 }
 
-export function partyOf(role: Role): "liberal" | "fascist" {
-  return role === "liberal" ? "liberal" : "fascist";
+export function partyOf(role: Role): "liberal" | "fascist" | "mastermind" {
+  if (role === "liberal") return "liberal";
+  if (role === "mastermind") return "mastermind";
+  return "fascist";
 }
 
 export const ROLE_NAME: Record<Role, string> = {
   liberal: "자유당원",
   fascist: "파시스트",
   hitler: "히틀러",
+  mastermind: "마스터 마인드",
 };
 
 export const PARTY_NAME = {
   liberal: "자유당",
   fascist: "파시스트",
+  mastermind: "제3세력",
 } as const;
 
 export const POLICY_NAME = {
