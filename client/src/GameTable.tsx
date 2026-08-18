@@ -106,6 +106,9 @@ export function GameTable({ snapshot, error, onAction, onLeave }: GameTableProps
           players={pub.players}
           playerOrder={pub.playerOrder}
           expansion={pub.expansion}
+          role={priv.role}
+          nightInfo={priv.nightInfo}
+          investigationResult={priv.investigationResult}
         />
       </div>
     </div>

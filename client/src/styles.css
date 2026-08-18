@@ -93,6 +93,23 @@ h2,
   font-size: 13px;
 }
 
+.note-confirmed {
+  margin-left: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--ok);
+}
+
+.note-party {
+  font-size: 12px;
+  color: var(--fascist-2);
+}
+
+.notepad select:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
 .notepad select,
 .notepad textarea {
   width: 100%;
