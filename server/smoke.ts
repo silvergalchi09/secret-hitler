@@ -21,8 +21,16 @@ function confirmAll(game: InternalGame): void {
   for (const id of game.playerOrder) applyAction(game, id, { type: "confirmNight" });
 }
 
+function releaseHold(game: InternalGame): void {
+  if (game.discussionHold) {
+    applyAction(game, game.playerOrder[0], { type: "advanceDiscussion" });
+  }
+}
+
 function elect(game: InternalGame, chancellor: string, votes: "ja" | "nein" = "ja"): void {
+  releaseHold(game);
   applyAction(game, game.presidentialCandidateId, { type: "nominate", playerId: chancellor });
+  releaseHold(game);
   for (const id of game.playerOrder) {
     if (!game.alive[id]) continue;
     applyAction(game, id, { type: "vote", choice: votes });
@@ -83,6 +91,7 @@ function assert(cond: unknown, msg: string): asserts cond {
   game.phase = "presidentialPower";
   game.lastElectedPresidentId = president;
   game.currentPower = "execution";
+  game.discussionHold = false;
   const hitler = game.playerOrder.find((id) => game.roles[id] === "hitler" && id !== president) ??
     game.playerOrder.find((id) => id !== president)!;
   if (game.roles[hitler] !== "hitler") {
@@ -190,10 +199,31 @@ function withMastermind(n: number): InternalGame {
   game.phase = "presidentialPower";
   game.lastElectedPresidentId = president;
   game.currentPower = "execution";
+  game.discussionHold = false;
   applyAction(game, president, { type: "usePower", targetId: mm });
   assert(!game.alive[mm], "mastermind can be executed");
   assert(game.winner === null, "killing mastermind should not end the game");
   console.log("execute mastermind ok");
+}
+
+{
+  const game = createGame(seats(5));
+  confirmAll(game);
+  assert(game.discussionHold, "nominate should wait for host after night");
+  const president = game.presidentialCandidateId;
+  const chancellor = eligibleChancellorIds(game)[0];
+  let blocked = false;
+  try {
+    applyAction(game, president, { type: "nominate", playerId: chancellor });
+  } catch {
+    blocked = true;
+  }
+  assert(blocked, "nominate during discussion hold should fail");
+  applyAction(game, game.playerOrder[0], { type: "advanceDiscussion" });
+  applyAction(game, president, { type: "nominate", playerId: chancellor });
+  assert(game.phase === "vote", "nominate after host advance");
+  assert(game.discussionHold, "vote should wait for host");
+  console.log("discussion hold ok");
 }
 
 console.log("all smoke tests passed");

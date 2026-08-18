@@ -64,6 +64,7 @@ export interface InternalGame {
   logSeq: number;
   expansion: ExpansionMode;
   fascistFiveBeforeLiberalFour: boolean;
+  discussionHold: boolean;
 }
 
 export class GameError extends Error {
@@ -244,6 +245,7 @@ function endGame(game: InternalGame, winner: Winner, winReason: string): void {
   game.policyHand = [];
   game.currentPower = null;
   game.pendingPowerReveal = null;
+  game.discussionHold = false;
   pushLog(game, winReason);
 }
 
@@ -273,6 +275,7 @@ function beginNextElection(game: InternalGame): void {
     );
   }
   game.phase = "nominate";
+  applyDiscussionHold(game);
 }
 
 function enactRevealedPolicy(
@@ -326,6 +329,7 @@ function enactRevealedPolicy(
   if (power) {
     game.currentPower = power;
     game.phase = "presidentialPower";
+    applyDiscussionHold(game);
     pushLog(game, `대통령 권한: ${POWER_NAME[power]}`);
     return;
   }
@@ -342,6 +346,7 @@ function startLegislativeSession(game: InternalGame): void {
   game.policyHand = draw(game, 3);
   game.phase = "presidentDiscard";
   game.vetoRejectedThisSession = false;
+  game.discussionHold = false;
 }
 
 export function createGame(
@@ -410,6 +415,7 @@ export function createGame(
     logSeq: 0,
     expansion,
     fascistFiveBeforeLiberalFour: false,
+    discussionHold: false,
   };
   pushLog(game, `게임이 시작되었습니다. 첫 대통령은 ${nameOf(game, firstPresident)}입니다.`);
   if (expansion === "mastermind") {
@@ -449,8 +455,37 @@ function applyStartLegislativeAfterElection(game: InternalGame): void {
   startLegislativeSession(game);
 }
 
+function applyDiscussionHold(game: InternalGame): void {
+  if (game.winner || game.phase === "gameOver") {
+    game.discussionHold = false;
+    return;
+  }
+  if (game.phase === "nominate" || game.phase === "vote") {
+    game.discussionHold = true;
+    return;
+  }
+  if (
+    game.phase === "presidentialPower" &&
+    !game.pendingPowerReveal &&
+    (game.currentPower === "investigate" ||
+      game.currentPower === "specialElection" ||
+      game.currentPower === "execution")
+  ) {
+    game.discussionHold = true;
+    return;
+  }
+  game.discussionHold = false;
+}
+
+function assertDiscussionOpen(game: InternalGame): void {
+  if (game.discussionHold) {
+    throw new GameError("호스트가 토론을 마친 뒤 다음 단계로 진행해야 합니다.");
+  }
+}
+
 export function actorIsUp(game: InternalGame, playerId: string): boolean {
   if (game.phase === "gameOver" || game.phase === "lobby") return false;
+  if (game.discussionHold) return false;
   if (!game.alive[playerId] && game.phase !== "night") return false;
   switch (game.phase) {
     case "night":
@@ -489,9 +524,10 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
       game.nightConfirmed[playerId] = true;
       if (game.playerOrder.every((id) => game.nightConfirmed[id])) {
         game.phase = "nominate";
+        applyDiscussionHold(game);
         pushLog(
           game,
-          `${nameOf(game, game.presidentialCandidateId)} 대통령이 수상을 지명합니다.`,
+          `${nameOf(game, game.presidentialCandidateId)} 대통령이 수상을 지명합니다. 디스코드에서 논의한 뒤 호스트가 진행하세요.`,
         );
       }
       return;
@@ -499,6 +535,7 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
 
     case "nominate": {
       assertAliveActor(game, playerId);
+      assertDiscussionOpen(game);
       if (game.phase !== "nominate") throw new GameError("지명 단계가 아닙니다.");
       if (playerId !== game.presidentialCandidateId) {
         throw new GameError("대통령만 수상을 지명할 수 있습니다.");
@@ -510,15 +547,17 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
       game.votes = {};
       game.lastVotes = null;
       game.phase = "vote";
+      applyDiscussionHold(game);
       pushLog(
         game,
-        `${nameOf(game, playerId)} 대통령이 ${nameOf(game, action.playerId)}을(를) 수상 후보로 지명했습니다.`,
+        `${nameOf(game, playerId)} 대통령이 ${nameOf(game, action.playerId)}을(를) 수상 후보로 지명했습니다. 디스코드에서 논의한 뒤 호스트가 투표를 시작하세요.`,
       );
       return;
     }
 
     case "vote": {
       assertAliveActor(game, playerId);
+      assertDiscussionOpen(game);
       if (game.phase !== "vote") throw new GameError("투표 단계가 아닙니다.");
       if (game.votes[playerId] !== undefined) {
         throw new GameError("이미 투표했습니다.");
@@ -624,6 +663,7 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
 
     case "usePower": {
       assertAliveActor(game, playerId);
+      assertDiscussionOpen(game);
       if (game.phase !== "presidentialPower") throw new GameError("대통령 권한 단계가 아닙니다.");
       if (playerId !== game.lastElectedPresidentId) {
         throw new GameError("현직 대통령만 권한을 사용할 수 있습니다.");
@@ -674,9 +714,10 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
         game.currentPower = null;
         game.pendingPowerReveal = null;
         game.phase = "nominate";
+        applyDiscussionHold(game);
         pushLog(
           game,
-          `${nameOf(game, playerId)} 대통령이 ${nameOf(game, targetId)}을(를) 다음 대통령 후보로 지정했습니다. (특별 선거)`,
+          `${nameOf(game, playerId)} 대통령이 ${nameOf(game, targetId)}을(를) 다음 대통령 후보로 지정했습니다. (특별 선거) 디스코드에서 논의한 뒤 호스트가 진행하세요.`,
         );
         return;
       }
@@ -712,6 +753,15 @@ export function applyAction(game: InternalGame, playerId: string, action: GameAc
       game.peekedPolicies = null;
       game.investigationResult = null;
       beginNextElection(game);
+      return;
+    }
+
+    case "advanceDiscussion": {
+      if (!game.discussionHold) {
+        throw new GameError("지금은 토론 후 진행할 단계가 아닙니다.");
+      }
+      game.discussionHold = false;
+      pushLog(game, "호스트가 다음 단계로 진행합니다.");
       return;
     }
 
@@ -794,5 +844,6 @@ export function getPublicGameFields(
     fascistTrack: fascistTrack(game.playerOrder.length),
     nightConfirmedIds: game.playerOrder.filter((id) => game.nightConfirmed[id]),
     youAreUp: actorIsUp(game, playerId),
+    discussionHold: game.discussionHold,
   };
 }

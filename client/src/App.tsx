@@ -117,7 +117,6 @@ export function App() {
     bindSocket(socket);
   };
 
-  const inGame = snapshot && snapshot.publicState.phase !== "lobby";
   const title = useMemo(() => {
     if (!snapshot) return "시크릿 히틀러";
     return `시크릿 히틀러 · ${snapshot.publicState.roomCode}`;
@@ -152,7 +151,7 @@ export function App() {
           snapshot={snapshot}
           error={error}
           onAction={send}
-          onLeave={inGame && snapshot.publicState.phase === "gameOver" ? leave : undefined}
+          onLeave={leave}
         />
       )}
       <footer className="credits">

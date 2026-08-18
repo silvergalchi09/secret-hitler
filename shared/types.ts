@@ -68,6 +68,7 @@ export interface PublicState {
   fascistTrack: (PresidentialPower | null)[];
   nightConfirmedIds: string[];
   youAreUp: boolean;
+  discussionHold: boolean;
 }
 
 export interface NightInfo {
@@ -106,4 +107,5 @@ export type GameAction =
   | { type: "vetoResponse"; agree: boolean }
   | { type: "usePower"; targetId?: string }
   | { type: "acknowledgePower" }
+  | { type: "advanceDiscussion" }
   | { type: "restart" };
