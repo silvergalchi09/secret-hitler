@@ -4,6 +4,7 @@ import type {
   ExpansionMode,
   NightInfo,
   Party,
+  Phase,
   PrivateState,
   PublicPlayer,
   Role,
@@ -26,6 +27,7 @@ interface NotesPadProps {
   players: PublicPlayer[];
   playerOrder: string[];
   expansion: ExpansionMode;
+  phase: Phase;
   role: Role | null;
   nightInfo: NightInfo | null;
   investigationResult: PrivateState["investigationResult"];
@@ -106,6 +108,7 @@ export function NotesPad({
   players,
   playerOrder,
   expansion,
+  phase,
   role,
   nightInfo,
   investigationResult,
@@ -127,6 +130,11 @@ export function NotesPad({
 
   useEffect(() => {
     if (!loaded) return;
+    if (phase === "gameOver") {
+      setNotes({});
+      localStorage.removeItem(storageKey);
+      return;
+    }
     const knownRoles = knownRolesFromSecrets(selfId, role, nightInfo, investigationResult);
 
     setNotes((prev) => {
@@ -134,7 +142,7 @@ export function NotesPad({
       if (next !== prev) localStorage.setItem(storageKey, JSON.stringify(next));
       return next;
     });
-  }, [loaded, storageKey, selfId, role, nightInfo, investigationResult]);
+  }, [loaded, storageKey, selfId, role, nightInfo, investigationResult, phase]);
 
   const save = (next: Notes) => {
     setNotes(next);
